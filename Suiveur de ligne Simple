@@ -1,0 +1,95 @@
+/*
+   Robot suiveur de ligne à base d'Arduino Uno.
+   
+Sorties OUT1 et OUT2 du L298N: premier moteur
+Sorties OUT3 et OUT4 du L298N: deuxième moteur
+Entrées +12 V et GND du L298N: alimentation des moteurs
+Broche ENA du L298N: broche 9 de l'Arduino
+Broche IN1 du L298N: broche 3 de l'Arduino
+Broche IN2 du L298N: broche 4 de l'Arduino
+Broche IN3 du L298N: broche 5 de l'Arduino
+Broche IN4 de L298N: broche 6 de l'Arduino
+Broche ENB du L298N: broche 10 de l'Arduino
+   
+   Plus d'informations:
+   https://electroniqueamateur.blogspot.com/2020/04/robot-suiveur-de-ligne-version-arduino.html
+*/
+
+// définition des broches
+
+#define capteurGauche A0
+#define capteurDroite A1
+
+#define brocheMoteur1a 3 // Premier moteur
+#define brocheMoteur1b 4 // Premier moteur
+#define brocheEnable1 9 // broche enable du L298N pour le premier moteur
+#define brocheMoteur2a 5 // Deuxième moteur
+#define brocheMoteur2b 6 // Deuxième moteur
+#define brocheEnable2 10 //  broche enable du L298N pour le deuxième moteur
+
+const int sensibilite = 50; // écart admissible par rapport à la valeur initiale
+
+int initialDroite; // état initial du capteur de droite
+int initialGauche; // état initial du capteur de gauche
+
+int vitesse = 600; // 0 à 1023 PWM qui contrôle la vitesse des moteurs
+
+void setup() {
+
+  // réglage des sorties
+  pinMode(brocheMoteur1a, OUTPUT);
+  pinMode(brocheMoteur1b, OUTPUT);
+  pinMode(brocheEnable1, OUTPUT);
+  pinMode(brocheMoteur2a, OUTPUT);
+  pinMode(brocheMoteur2b, OUTPUT);
+  pinMode(brocheEnable2, OUTPUT);
+
+  // on demeure immobile pour l'instant
+  digitalWrite(brocheEnable1, 0);
+  digitalWrite(brocheEnable2, 0);
+
+  // réglage en marche avant
+  digitalWrite(brocheMoteur1a, HIGH);
+  digitalWrite(brocheMoteur1b, LOW);
+  digitalWrite(brocheMoteur2a, HIGH);
+  digitalWrite(brocheMoteur2b, LOW);
+
+  delay(2000); // on se donne le temps de placer le robot à son point de départ
+
+  // lecture des valeurs initiales (on suppose que les capteurs sont de part et d'autre de la ligne)
+  initialDroite = analogRead(capteurDroite);
+  initialGauche = analogRead(capteurGauche);
+
+}
+
+void loop() {
+  int valeurDroite, valeurGauche;
+
+  valeurDroite = analogRead(capteurDroite);
+  valeurGauche = analogRead(capteurGauche);
+
+  if ((abs(valeurDroite - initialDroite) < sensibilite) && (abs(valeurGauche - initialGauche) < sensibilite)) {
+    // on continue tout droit
+    analogWrite(brocheEnable1, vitesse);
+    analogWrite(brocheEnable2, vitesse);
+  }
+  else if ((abs(valeurDroite - initialDroite) < sensibilite) && (abs(valeurGauche - initialGauche) >= sensibilite)) {
+    // on tourne à gauche
+    digitalWrite(brocheEnable1, 0);
+    analogWrite(brocheEnable2, vitesse);
+  }
+
+  else if ((abs(valeurDroite - initialDroite) >= sensibilite) && (abs(valeurGauche - initialGauche) < sensibilite)) {
+    // on tourne à droite
+    analogWrite(brocheEnable1, vitesse);
+    digitalWrite(brocheEnable2, 0);
+  }
+
+  else {
+    // on s'arrête
+    digitalWrite(brocheEnable1, 0);
+    digitalWrite(brocheEnable2, 0);
+  }
+
+  delay(100);
+}
